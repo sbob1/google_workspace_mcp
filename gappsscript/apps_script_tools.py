@@ -958,11 +958,27 @@ async def _delete_script_project_impl(
         f"[delete_script_project] Email: {user_google_email}, ScriptID: {script_id}"
     )
 
-    # Apps Script projects are stored as Drive files
-    await asyncio.to_thread(service.files().delete(fileId=script_id).execute)
+    # Apps Script projects are stored as Drive files.
+    # Seanbob Ventures fork: only act on Apps Script files, and move them to
+    # Drive trash (recoverable for 30 days) instead of permanently deleting.
+    # Upstream called files().delete on any file ID. See deploy/cloudrun/README.md.
+    metadata = await asyncio.to_thread(
+        service.files()
+        .get(fileId=script_id, fields="mimeType", supportsAllDrives=True)
+        .execute
+    )
+    if metadata.get("mimeType") != "application/vnd.google-apps.script":
+        raise UserInputError(
+            f"{script_id} is not an Apps Script project; refusing to delete it."
+        )
+    await asyncio.to_thread(
+        service.files()
+        .update(fileId=script_id, body={"trashed": True}, supportsAllDrives=True)
+        .execute
+    )
 
-    logger.info(f"[delete_script_project] Deleted script {script_id}")
-    return f"Deleted Apps Script project: {script_id}"
+    logger.info(f"[delete_script_project] Moved script {script_id} to Drive trash")
+    return f"Moved Apps Script project to Drive trash: {script_id}"
 
 
 @server.tool(

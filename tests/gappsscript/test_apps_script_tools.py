@@ -887,15 +887,40 @@ async def test_list_script_processes_against_discovery_schema(
 
 @pytest.mark.asyncio
 async def test_delete_script_project():
-    """Test deleting a script project"""
+    """Deleting a script project moves it to Drive trash (fork behavior)."""
     mock_service = Mock()
-    mock_service.files().delete().execute.return_value = {}
+    mock_service.files().get().execute.return_value = {
+        "mimeType": "application/vnd.google-apps.script"
+    }
+    mock_service.files().update().execute.return_value = {}
 
     result = await _delete_script_project_impl(
         service=mock_service, user_google_email="test@example.com", script_id="test123"
     )
 
-    assert "Deleted Apps Script project: test123" in result
+    assert "Moved Apps Script project to Drive trash: test123" in result
+    mock_service.files().update.assert_called_with(
+        fileId="test123", body={"trashed": True}, supportsAllDrives=True
+    )
+    mock_service.files().delete.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_delete_script_project_rejects_non_script_files():
+    """Deleting refuses any Drive file that is not an Apps Script project."""
+    mock_service = Mock()
+    mock_service.files().get().execute.return_value = {
+        "mimeType": "application/vnd.google-apps.document"
+    }
+
+    with pytest.raises(UserInputError):
+        await _delete_script_project_impl(
+            service=mock_service,
+            user_google_email="test@example.com",
+            script_id="doc123",
+        )
+    mock_service.files().update.assert_not_called()
+    mock_service.files().delete.assert_not_called()
 
 
 @pytest.mark.asyncio

@@ -3,8 +3,8 @@
 # Safe to re-run: every step checks before creating.
 # Run from Cloud Shell, signed in as a project owner:  bash deploy/cloudrun/setup.sh
 #
-# Does NOT handle the OAuth client secret: create the secret
-# "workspace-mcp-client-secret" in Secret Manager by hand first.
+# Does NOT create the OAuth consent screen, the OAuth client, or its secret
+# (CLIENT_SECRET_NAME in config.sh) — do those in the console first; see README.md.
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -14,10 +14,14 @@ say() { printf '\n==> %s\n' "$*"; }
 
 gcloud config set project "$PROJECT_ID" >/dev/null
 
-say "Enabling required APIs"
+say "Enabling required APIs (infrastructure + the Workspace APIs the tools call)"
 gcloud services enable \
   run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
-  secretmanager.googleapis.com storage.googleapis.com iamcredentials.googleapis.com
+  secretmanager.googleapis.com storage.googleapis.com iamcredentials.googleapis.com \
+  billingbudgets.googleapis.com \
+  gmail.googleapis.com drive.googleapis.com calendar-json.googleapis.com \
+  docs.googleapis.com sheets.googleapis.com slides.googleapis.com forms.googleapis.com \
+  tasks.googleapis.com people.googleapis.com chat.googleapis.com script.googleapis.com
 
 say "Checking the OAuth client secret exists"
 if ! gcloud secrets describe "$CLIENT_SECRET_NAME" >/dev/null 2>&1; then

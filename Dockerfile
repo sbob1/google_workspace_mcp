@@ -16,7 +16,9 @@ COPY . .
 # --extra otel ships the OpenTelemetry SDK/exporter so tracing can be enabled at
 # runtime via OTEL_* env vars; it stays a no-op unless an OTLP endpoint is set.
 # --extra valkey backs WORKSPACE_MCP_OAUTH_PROXY_STORAGE_BACKEND=valkey.
-RUN uv sync --frozen --no-dev --extra disk --extra otel --extra valkey
+# --extra gcs backs WORKSPACE_MCP_FILES_GCS_BUCKET / the gcs credential store
+# (Seanbob Ventures Cloud Run deployment, see deploy/cloudrun/).
+RUN uv sync --frozen --no-dev --extra disk --extra otel --extra valkey --extra gcs
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app \

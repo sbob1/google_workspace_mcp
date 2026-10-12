@@ -27,10 +27,30 @@ Source of truth for how this fork is deployed. Everything here follows
 - **Only seanbobventures.com accounts** can sign in: enforced by the Internal consent
   screen (the server has no domain allowlist of its own).
 - **Client registration** limited to Claude and Claude Code callback URLs.
-- **Tools off at launch**: `manage_drive_access`, `set_drive_file_permissions`,
-  `run_script_function`, `manage_deployment`. Edit `env.yaml` and redeploy to change.
+- **Tools off at launch**: see [Tools turned off](#tools-turned-off) below.
 - **Cost guard**: scale to zero, max 1 instance, $4 Cloud Run spend cap and $5 project
   budget alert (set in the Billing console).
+
+## Tools turned off
+
+These upstream tools are hidden from Claude via `WORKSPACE_MCP_DISABLED_TOOLS` in
+`env.yaml` (decided Oct 2026). They're the main ways a malicious email or doc could
+trick an agent into leaking data or acting outside your review.
+
+| Tool | Service | What it does | Why it's off |
+|---|---|---|---|
+| `manage_drive_access` | Drive | Grant, update, or revoke sharing for people/groups; transfer file ownership | Could share files outside seanbobventures.com |
+| `set_drive_file_permissions` | Drive | Change link sharing, e.g. "anyone with the link" | Could make files public |
+| `run_script_function` | Apps Script | Execute a function in a deployed script, as you | A script runs with your full access and can bypass the other limits |
+| `manage_deployment` | Apps Script | Create, update, or delete script deployments | Needed to publish scripts that `run_script_function` executes |
+
+Still on: Apps Script editing (`manage_script_project`, `manage_script_content`, …),
+Gmail filters (`manage_gmail_filter`; the server can't add new forwarding addresses),
+and read-only sharing checks (`get_drive_file_permissions`, `check_drive_file_public_access`).
+
+**To turn one back on:** remove it from `WORKSPACE_MCP_DISABLED_TOOLS` in `env.yaml`,
+then run `bash deploy/cloudrun/deploy.sh`. No reconnect needed — the OAuth scopes are
+already granted. Idea for later: patch Drive sharing to allow seanbobventures.com only.
 
 ## First-time setup (Cloud Shell)
 

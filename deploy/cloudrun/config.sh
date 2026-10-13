@@ -26,6 +26,11 @@ FILES_BUCKET="seanbob-ventures-mcp-files"        # short-lived download staging
 CLIENT_SECRET_NAME="workspace-mcp-client-secret"
 JWT_SECRET_NAME="workspace-mcp-jwt-key"  # also the storage encryption key: rotating it signs everyone out
 
+# Keep-awake ping: Cloud Scheduler job that GETs /health so the server isn't asleep
+# when Claude connects. Cloud Run keeps an idle instance ~15 min, so ping more often than that.
+KEEPWARM_JOB="workspace-mcp-keepwarm"
+KEEPWARM_SCHEDULE="*/5 * * * *"  # cron, UTC
+
 # UID/GID of the Dockerfile's "app" user; owns files on the sessions mount.
 # Must equal `id -u app` / `id -g app` in the image — re-check after each upstream sync.
 APP_UID="1000"

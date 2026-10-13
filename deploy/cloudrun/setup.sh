@@ -18,7 +18,7 @@ say "Enabling required APIs (infrastructure + the Workspace APIs the tools call)
 gcloud services enable \
   run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
   secretmanager.googleapis.com storage.googleapis.com iamcredentials.googleapis.com \
-  billingbudgets.googleapis.com \
+  billingbudgets.googleapis.com cloudscheduler.googleapis.com \
   gmail.googleapis.com drive.googleapis.com calendar-json.googleapis.com \
   docs.googleapis.com sheets.googleapis.com slides.googleapis.com forms.googleapis.com \
   tasks.googleapis.com people.googleapis.com chat.googleapis.com script.googleapis.com
@@ -84,5 +84,20 @@ for secret in "$CLIENT_SECRET_NAME" "$JWT_SECRET_NAME"; do
   gcloud secrets add-iam-policy-binding "$secret" \
     --member="serviceAccount:${RUN_SA}" --role="roles/secretmanager.secretAccessor" >/dev/null
 done
+
+say "Keep-awake ping (Cloud Scheduler job ${KEEPWARM_JOB})"
+keepwarm_flags=(
+  --location="$REGION"
+  --schedule="$KEEPWARM_SCHEDULE"
+  --uri="${SERVICE_URL}/health"
+  --http-method=GET
+  --attempt-deadline=60s
+  --description="Keeps ${SERVICE} awake so Claude's connector doesn't time out on a cold start. See deploy/cloudrun/README.md."
+)
+if gcloud scheduler jobs describe "$KEEPWARM_JOB" --location="$REGION" >/dev/null 2>&1; then
+  gcloud scheduler jobs update http "$KEEPWARM_JOB" "${keepwarm_flags[@]}" >/dev/null
+else
+  gcloud scheduler jobs create http "$KEEPWARM_JOB" "${keepwarm_flags[@]}" >/dev/null
+fi
 
 say "Setup complete. Next: bash deploy/cloudrun/deploy.sh"

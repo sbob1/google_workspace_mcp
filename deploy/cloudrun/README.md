@@ -13,10 +13,10 @@ below; this README names them instead of repeating them. Follows
 
 | What | Source |
 |---|---|
-| Project, region, service name and URL, OAuth client ID, service accounts, buckets, mount path, secret names | `config.sh` |
+| Project, region, service name and URL, OAuth client ID, service accounts, buckets, mount path, secret names, keep-awake job name and schedule | `config.sh` |
 | Server behavior (auth mode, tool tier, disabled tools, redirect allowlist, token lifetime) | `env.yaml` |
 | Cloud Run sizing and flags (instances, CPU, memory, timeout, volume) | `deploy.sh` |
-| APIs, IAM grants, buckets, JWT key creation | `setup.sh` |
+| APIs, IAM grants, buckets, JWT key creation, keep-awake ping job | `setup.sh` |
 | Secret values | Secret Manager (names in `config.sh`) |
 | Billing account, trial end date, Bitwarden item for the client-secret JSON | Life OS hub doc ("Seanbob Ventures README" in Drive) |
 
@@ -57,6 +57,13 @@ Not scripted — record changes here.
 - **No credential-store bucket or CMEK:** stateless mode doesn't use the credential store.
 - **Downloads:** staged in the files bucket and handed out as signed URLs; a lifecycle rule in
   `setup.sh` deletes old objects.
+- **Keep-awake ping (added Oct 13, 2026):** a Cloud Scheduler job (`KEEPWARM_JOB` in
+  `config.sh`, created by `setup.sh`) GETs `/health` on `KEEPWARM_SCHEDULE`. Without it the
+  service scales to zero when idle, and the first connection afterward can take long enough that
+  Claude shows the connector as disconnected. Pings are tiny and idle instances aren't billed, so
+  this stays in free tiers (3 free Scheduler jobs per billing account). Google can still restart
+  the instance occasionally. Alternative if that's not enough: `--min-instances=1` in `deploy.sh`
+  (~$13/month; raise the Cloud Run cap first).
 - **Cost guard:** scale to zero + one instance + the budgets above. Expected cost ≈ $0/month.
 
 ## Tools turned off
@@ -113,13 +120,15 @@ Edit the file that holds the value (table above), then run `deploy.sh`. Upstream
 
 ## Verify
 
-`deploy.sh` prints `/health`. Also confirmed at launch: an unauthenticated `POST /mcp` returns
-401; registering a client with a non-allowlisted redirect returns 400. **Not yet verified:**
-sign-in surviving a restart (check that Claude doesn't ask to reconnect after a redeploy).
+`deploy.sh` prints `/health`. Confirmed at launch: an unauthenticated `POST /mcp` returns 401;
+registering a client with a non-allowlisted redirect returns 400. Confirmed Oct 13, 2026: sign-in
+survived an overnight scale-to-zero (no reconnect needed). Keep-awake ping: Cloud Scheduler →
+`KEEPWARM_JOB` shows a recent successful run.
 
 ## Off switches
 
 - **Cut Claude's access now:** myaccount.google.com → Security → third-party access → remove
   "Seanbob Ventures Workspace Agent", and delete the objects in the sessions bucket.
 - **Stop the server:** delete the Cloud Run service (setting max instances to 0 in the console
-  is undone by the next `deploy.sh`).
+  is undone by the next `deploy.sh`). Also pause or delete the keep-awake job (Cloud Scheduler →
+  `KEEPWARM_JOB`), or it keeps pinging; re-running `setup.sh` recreates it.

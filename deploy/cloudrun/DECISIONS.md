@@ -89,3 +89,15 @@ Owner: Sean. Format: date · decision · why · rejected alternatives · status.
   AI agents; open work in Linear. Each fact has one home.
 - **Why:** Sean's one-source-of-truth rule; keeps the README short as history accumulates.
 - **Status:** Active.
+
+### D11 · 2026-10-13 · Weekly Claude-reviewed upstream sync
+- **Decision:** a weekly Claude scheduled task prepares upstream updates on a branch, reviews
+  them for security, and files a Linear issue; Sean merges and deploys.
+- **Why:** upstream ships several releases a week; this server holds broad Google access, so
+  updates should arrive regularly but only after a check of new tools, scopes, outbound hosts,
+  auth changes and dependencies. Nothing merges or deploys without Sean.
+- **Rejected:** GitHub Action that only opens a pull request (no security review; enabling Actions
+  in the fork would also activate upstream's publishing workflows); manual reminders (easy to
+  skip, all review on Sean); auto-merge or auto-deploy (no human check on a high-access server).
+- **Status:** Active. The task writes to Linear under Sean's account (approved exception to How
+  We Work → Identity until a "Sean's Agent" Linear connector exists).

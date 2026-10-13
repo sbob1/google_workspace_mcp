@@ -39,6 +39,9 @@ Not scripted — this list is their source of truth; update it when the console 
 - **Claude connector:** "Seanbob Workspace", URL = `SERVICE_URL` + `/mcp`, no advanced settings.
   Claude's built-in Gmail and Google Drive connectors are separate and not governed by this
   deployment's tool settings.
+- **Claude scheduled task:** "Weekly upstream sync review — Workspace MCP", Mondays 6:50 AM
+  Mountain, runs in the cloud with automatic approval. Its instructions live in the task itself
+  (Claude → scheduled tasks); see "Changing things" for what it does.
 
 ## How it works
 
@@ -103,9 +106,14 @@ Add the Claude connector with the URL `deploy.sh` prints. For Claude Code:
 
 Edit the file that holds the value (table above), then in Cloud Shell:
 `cd ~/google_workspace_mcp && git pull && bash deploy/cloudrun/setup.sh && bash deploy/cloudrun/deploy.sh`
-(both scripts are safe to re-run). Upstream update: GitHub "Sync fork", review the diff, keep the
-fork changes above, re-check `APP_UID` in `config.sh`, then run the same command. If a change
-reflects a new decision, add it to `DECISIONS.md`.
+(both scripts are safe to re-run). If a change reflects a new decision, add it to `DECISIONS.md`.
+
+**Upstream updates (D11):** the weekly scheduled task merges upstream into a `sync/upstream-<date>`
+branch, keeps the fork changes, runs the checks, reviews the diff for security, and files a
+"Review upstream sync" issue in Linear (Triage) with the verdict and a compare link. It never
+merges to main or deploys. Sean approves by merging that branch, then running the command above.
+Manual fallback: GitHub "Sync fork", review the diff, keep the fork changes, re-check `APP_UID`,
+then run the command above.
 
 ## Verify
 

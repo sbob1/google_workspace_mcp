@@ -101,3 +101,15 @@ Owner: Sean. Format: date · decision · why · rejected alternatives · status.
   skip, all review on Sean); auto-merge or auto-deploy (no human check on a high-access server).
 - **Status:** Active. The task writes to Linear under Sean's account (approved exception to How
   We Work → Identity until a "Sean's Agent" Linear connector exists).
+
+### D12 · 2026-11-09 · Turn off `manage_calendar` (upstream v2.4.0)
+- **Decision:** add `manage_calendar` to the turned-off tools (D5).
+- **Why:** upstream v2.4.0 replaced `create_calendar` with `manage_calendar`, which also shares
+  calendars with any user, group, domain, or the public (`scope_type` "default") and has no
+  domain check. That is the same exfiltration path D5 closes for Drive sharing.
+- **Trade-off:** Claude can no longer create secondary calendars (the old `create_calendar` had
+  only that action). Events on existing calendars (`manage_event`) are unaffected.
+- **Rejected:** keeping it on behind Claude's approval prompts (D5 treats sharing tools as off,
+  not prompt-gated); a fork patch allowing only "create" (adds fork divergence for a rarely used
+  action — revisit if Sean needs it).
+- **Status:** Proposed on branch `sync/upstream-2026-11-09`; active once Sean merges and deploys.

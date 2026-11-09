@@ -69,6 +69,7 @@ tool has no row here. Background: D5.
 | `run_script_function` | Run a function in a deployed Apps Script, as Sean | Code runs with full access, bypassing other limits |
 | `manage_deployment` | Create/update/delete Apps Script deployments | Publishes code for the tools above to run |
 | `manage_script_trigger` | List/delete triggers; executes script code to do so | Runs the latest saved (editable) script code |
+| `manage_calendar` | Create calendars; share a calendar with anyone, a domain, or the public; change or remove sharing | Could share or publish Sean's calendars outside the domain (D12) |
 | `search_custom` | Google Programmable Search | Not configured (no search engine keys) |
 | `get_search_engine_info` | Programmable Search metadata | Not configured |
 
